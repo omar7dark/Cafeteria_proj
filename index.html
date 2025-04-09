@@ -79,7 +79,8 @@
       const botToken = '7430159727:AAGzDAR8DAVOsaqG4cMBgDcHj6XkLN4ZWBg';
       const chatId = '-4670488944'; 
 
-      const url = 'https://api.telegram.org/bot${botToken}/sendMessage';
+      // يجب تصحيح الـ URL هنا باستخدام القوسين المعقفين
+      const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
 
       await fetch(url, {
         method: 'POST',
@@ -94,20 +95,6 @@
 
       alert('تم إرسال الطلب بنجاح ✅');
     }
-
-
-    await fetch('https://script.google.com/macros/s/AKfycbxQBR4otABbKZdBDcVnVus5HldmAqGMNL1LKvoc3_7_-dZ3O8B1re8voGrjpNplbd2p/exec', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    tea: tea,
-    coffee: coffee,
-    water: water,
-    juice: juice
-  })
-});
   </script>
 
 </body>
