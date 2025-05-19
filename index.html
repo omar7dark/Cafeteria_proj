@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>طلبات الكافيتيريا</title>
+  <!-- Bootstrap RTL -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Tahoma', sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+      margin: 0;
+      text-align: center;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .item-card {
+      background: white;
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 180px;
+      text-align: center;
+    }
+
+    .item-card img {
+      width: 100%;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 6px;
+    }
+
+    .item-card label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: bold;
+    }
+
+    .price {
+      color: #666;
+      margin-bottom: 5px;
+    }
+
+    .item-card input[type="number"] {
+      width: 60px;
+      padding: 5px;
+      font-size: 16px;
+      text-align: center;
+    }
+
+    .item-card textarea {
+      width: 100%;
+      padding: 5px;
+      font-size: 14px;
+      margin-top: 10px;
+      resize: vertical;
+      height: 60px;
+      border-radius: 6px;
+    }
+
+    button {
+      margin-top: 20px;
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      cursor: pointer;
+      border-radius: 10px;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #loading-spinner {
+      display: none;
+      margin-top: 20px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.5);
+    }
+
+    .modal-content {
+      background-color: white;
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 400px;
+      text-align: right;
+    }
+
+    .modal-content h3 {
+      margin-top: 0;
+    }
+
+    .order-summary {
+      text-align: right;
+      margin-bottom: 15px;
+    }
+
+    .order-summary div {
+      margin-bottom: 5px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .spinner {
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid #4CAF50;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>طلبات كافيتيريا المجمع الحكومي</h1>
+  <h2 id="room-name">غرفة غير معروفة</h2>
+
+  <div id="items-container" class="container"></div>
+
+  <button id="submit-btn" onclick="confirmOrder()">إرسال الطلبية</button>
+  <div id="loading-spinner"><div class="spinner"></div></div>
+
+  <div id="order-modal" class="modal">
+    <div class="modal-content">
+      <h3>تأكيد الطلبية</h3>
+      <div class="order-summary" id="order-summary"></div>
+      <div class="modal-buttons">
+        <button onclick="submitConfirmedOrder()">تأكيد</button>
+        <button onclick="closeModal()">تعديل</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const validRooms = [
+      "النادي_العلمي", "الغرفة_الدولية", "نقابة_المبرمجين", "المنظمات_المحلية"
+    ];
+
+    const items = [
+      { id: 'water', name: 'ماء', price: 250, img: 'water.jpg' },
+      { id: 'tea', name: 'شاي', price: 500, img: 'tea.jpg' },
+      { id: 'tea_walnut', name: 'شاي بالجوز', price: 1500, img: 'tea_walnut.jpg' },
+      { id: 'lemon', name: 'حامض', price: 500, img: 'lemon.jpg' },
+      { id: 'arabic_coffee', name: 'قهوة عربية', price: 2000, img: 'arabic_coffee.jpg' },
+      { id: 'turkish_coffee', name: 'قهوة تركية', price: 2000, img: 'turkish_coffee.jpg' },
+      { id: 'turkish_walnut', name: 'قهوة تركية بالجوز', price: 2500, img: 'turkish_walnut.jpg' },
+      { id: 'espresso', name: 'قهوة اسبريسو', price: 2500, img: 'espresso.jpg' },
+      { id: 'chocolate_coffee', name: 'قهوة جكليتية', price: 2000, img: 'choco_coffee.jpg' },
+      { id: 'choco_walnut', name: 'قهوة جكليتيه بالجوز', price: 2500, img: 'choco_walnut.jpg' },
+      { id: 'milk_walnut', name: 'حليب ساخن بالجوز', price: 1500, img: 'milk_walnut.jpg' },
+      { id: 'cappuccino', name: 'كابتشينو', price: 2000, img: 'cappuccino.jpg' },
+      { id: 'cappuccino_walnut', name: 'كابتشينو بالجوز', price: 2500, img: 'cappuccino_walnut.jpg' },
+      { id: 'nescafe', name: 'نسكافيه', price: 2000, img: 'nescafe.jpg' },
+      { id: 'nescafe_walnut', name: 'نسكافيه بالجوز', price: 2500, img: 'nescafe_walnut.jpg' },
+      { id: 'hot_nutella', name: 'هوت نوتيلا', price: 2000, img: 'hot_nutella.jpg' },
+      { id: 'choco_milk_walnut', name: 'كاكاو وحليب بالجوز', price: 2000, img: 'choco_milk.jpg' },
+      { id: 'hot_chocolate', name: 'هوت جوكليت', price: 2500, img: 'hot_chocolate.jpg' }
+    ];
+
+    function getRoomFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("room");
+    }
+
+    function setRoomName(roomName) {
+      document.getElementById("room-name").textContent = `غرفة: ${roomName}`;
+    }
+
+    function disablePage() {
+      document.getElementById("room-name").textContent = " الغرفة غير مفعلة";
+      document.getElementById("items-container").classList.add("hidden");
+      document.getElementById("submit-btn").disabled = true;
+      document.getElementById("submit-btn").style.opacity = 0.5;
+    }
+
+    function confirmOrder() {
+      const roomName = getRoomFromURL();
+      const summary = document.getElementById("order-summary");
+      summary.innerHTML = "";
+
+      let hasItems = false;
+      items.forEach(item => {
+        const qty = parseInt(document.getElementById(item.id).value) || 0;
+        const note = document.getElementById(item.id + '-note').value.trim();
+        if (qty > 0) {
+          hasItems = true;
+          const line = document.createElement("div");
+          line.textContent = `${item.name} - الكمية: ${qty}${note ? " - ملاحظة: " + note : ""}`;
+          summary.appendChild(line);
+        }
+      });
+
+      if (!hasItems) {
+        alert("يرجى اختيار صنف واحد على الأقل");
+        return;
+      }
+
+      document.getElementById("order-modal").style.display = "block";
+    }
+
+    function closeModal() {
+      document.getElementById("order-modal").style.display = "none";
+    }
+
+    async function submitConfirmedOrder() {
+      closeModal();
+      document.getElementById("submit-btn").disabled = true;
+      document.getElementById("loading-spinner").style.display = "block";
+
+      const roomName = getRoomFromURL();
+      const time = new Date().toLocaleString('ar-EG');
+      const order = { roomId: roomName, time, items: [] };
+
+      let message = ` طلبية جديدة من غرفة: ${roomName}\n`;
+
+      items.forEach(item => {
+        const quantity = parseInt(document.getElementById(item.id).value) || 0;
+        const note = document.getElementById(item.id + '-note').value || '';
+        if (quantity > 0) {
+          order.items.push({
+            name: item.name,
+            quantity,
+            price: item.price,
+            subtotal: item.price * quantity,
+            note
+          });
+          message += `${item.name}: ${quantity}${note ? " - ملاحظة: " + note : ""}\n`;
+        }
+      });
+
+      message += ` الوقت: ${time}`;
+      const botToken = 'توكن البوت هنا';
+      const chatId = 'معرف القناة هنا';
+
+      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text: message })
+      });
+
+      await fetch('https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(order),
+        mode: 'no-cors'
+      });
+
+      alert(" تم إرسال الطلب بنجاح");
+      location.reload();
+    }
+
+    window.onload = function () {
+      const roomName = getRoomFromURL();
+      if (validRooms.includes(roomName)) {
+        setRoomName(roomName);
+        const container = document.getElementById('items-container');
+        let row;
+
+        items.forEach((item, index) => {
+          if (index % 2 === 0) {
+            row = document.createElement('div');
+            row.className = 'row mb-3';
+            container.appendChild(row);
+          }
+
+          const col = document.createElement('div');
+          col.className = 'col-6 d-flex justify-content-center';
+          col.innerHTML = `
+            <div class="item-card">
+              <img src="${item.img}" alt="${item.name}">
+              <label for="${item.id}">${item.name}</label>
+              <div class="price">${item.price} دينار</div>
+              <input type="number" id="${item.id}" min="0">
+              <textarea id="${item.id}-note" placeholder="أضف ملاحظة..."></textarea>
+            </div>
+          `;
+          row.appendChild(col);
+        });
+      } else {
+        disablePage();
+      }
+    };
+  </script>
+</body>
+</html>
